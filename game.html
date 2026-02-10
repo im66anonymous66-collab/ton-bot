@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TON Earn Game</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: 'Arial', sans-serif;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            color: white;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            background: rgba(0, 0, 0, 0.5);
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+        }
+
+        .game-area {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            width: 300px;
+            height: 300px;
+            border-radius: 20px;
+            margin: 30px auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            user-select: none;
+            transition: transform 0.1s;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .game-area:active {
+            transform: scale(0.95);
+        }
+
+        .game-area::before {
+            content: '💰';
+            font-size: 80px;
+            position: absolute;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% {
+                transform: translateY(0px);
+            }
+            50% {
+                transform: translateY(-20px);
+            }
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 15px;
+            border-radius: 10px;
+            border: 2px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .stat-label {
+            font-size: 0.9em;
+            opacity: 0.8;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.5em;
+            font-weight: bold;
+        }
+
+        button {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            border: none;
+            color: white;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: transform 0.2s, box-shadow 0.2s;
+            margin-top: 20px;
+            font-weight: bold;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(0, 0, 0, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0px);
+        }
+
+        .floating-text {
+            position: fixed;
+            pointer-events: none;
+            font-size: 1.5em;
+            font-weight: bold;
+            animation: floatUp 1s ease-out forwards;
+        }
+
+        @keyframes floatUp {
+            0% {
+                opacity: 1;
+                transform: translateY(0px);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-100px);
+            }
+        }
+
+        .info {
+            margin-top: 20px;
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .user-name {
+            margin-top: 10px;
+            font-size: 1.2em;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 TON Earn Game</h1>
+        
+        <div class="user-name" id="userName">Welcome!</div>
+
+        <div class="game-area" id="gameArea">
+            <span id="tapText">💰</span>
+        </div>
+
+        <div class="stats">
+            <div class="stat-box">
+                <div class="stat-label">Total Earned</div>
+                <div class="stat-value" id="totalEarned">0.0</div>
+            </div>
+            <div class="stat-box">
+                <div class="stat-label">Session Earned</div>
+                <div class="stat-value" id="sessionEarned">0.0</div>
+            </div>
+        </div>
+
+        <button onclick="claimReward()">💳 Claim Reward</button>
+
+        <div class="info">
+            <p>Click the box to earn TON tokens! 🎯</p>
+        </div>
+    </div>
+
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <script>
+        // Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+
+        let stats = {
+            totalEarned: 0,
+            sessionEarned: 0,
+            taps: 0
+        };
+
+        const gameArea = document.getElementById('gameArea');
+        const totalEarnedEl = document.getElementById('totalEarned');
+        const sessionEarnedEl = document.getElementById('sessionEarned');
+        const userNameEl = document.getElementById('userName');
+
+        // نمایش نام کاربر
+        if (tg.initDataUnsafe?.user) {
+            const user = tg.initDataUnsafe.user;
+            userNameEl.textContent = `Welcome, ${user.first_name}! 👋`;
+        }
+
+        // کلیک روی گیم
+        gameArea.addEventListener('click', (e) => {
+            const reward = 0.01; // هر کلیک = 0.01 TON
+            stats.sessionEarned += reward;
+            stats.totalEarned += reward;
+            stats.taps++;
+
+            // به‌روزرسانی نمایش
+            sessionEarnedEl.textContent = stats.sessionEarned.toFixed(2);
+            totalEarnedEl.textContent = stats.totalEarned.toFixed(2);
+
+            // انیمیشن متن
+            const floatingText = document.createElement('div');
+            floatingText.className = 'floating-text';
+            floatingText.textContent = `+${reward} TON`;
+            floatingText.style.left = e.clientX + 'px';
+            floatingText.style.top = e.clientY + 'px';
+            document.body.appendChild(floatingText);
+
+            setTimeout(() => floatingText.remove(), 1000);
+
+            // لرزش
+            gameArea.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                gameArea.style.transform = 'scale(1)';
+            }, 50);
+        });
+
+        // درخواست پاداش
+        function claimReward() {
+            if (stats.sessionEarned < 0.5) {
+                tg.showAlert('⚠️ Minimum 0.5 TON required!');
+                return;
+            }
+
+            // ارسال به سرور (بعداً)
+            const userId = tg.initDataUnsafe?.user?.id || 'unknown';
+            const amount = stats.sessionEarned;
+
+            fetch('/api/claim-reward', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    user_id: userId,
+                    amount: amount,
+                    taps: stats.taps
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    tg.showAlert('✅ Reward claimed! Check your wallet.');
+                    stats.sessionEarned = 0;
+                    sessionEarnedEl.textContent = '0.0';
+                } else {
+                    tg.showAlert('❌ Error: ' + data.error);
+                }
+            })
+            .catch(err => {
+                tg.showAlert('❌ Connection error');
+                console.error(err);
+            });
+        }
+
+        // حفظ داده‌ها در localStorage
+        window.addEventListener('beforeunload', () => {
+            localStorage.setItem('stats', JSON.stringify(stats));
+        });
+
+        // بارگذاری داده‌های قبلی
+        const saved = localStorage.getItem('stats');
+        if (saved) {
+            stats = JSON.parse(saved);
+            sessionEarnedEl.textContent = stats.sessionEarned.toFixed(2);
+            totalEarnedEl.textContent = stats.totalEarned.toFixed(2);
+        }
+    </script>
+</body>
+</html>

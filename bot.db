@@ -1,0 +1,16 @@
+{
+  "users": [
+    {
+      "id": 1,
+      "telegram_id": 8358194582,
+      "username": "edri3333",
+      "language": "en",
+      "ton_address": null,
+      "consent_agreed": 1,
+      "consent_date": "2026-02-10T05:07:50.919Z",
+      "created_at": "2026-02-10T04:48:16.200Z"
+    }
+  ],
+  "rewards": [],
+  "traffic_logs": []
+}
