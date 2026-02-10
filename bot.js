@@ -209,8 +209,7 @@ bot.hears('🎮 Play Game', (ctx) => {
   ctx.reply(
     '🎮 Click to play the game!',
     Markup.inlineKeyboard([
-      [Markup.button.webApp('🎮 Play Now', `http://localhost:3000/game`)]
-    ])
+[Markup.button.webApp('🎮 Play Now', `https://ton-bot-xxxx.onrender.com/game`)]    ])
   );
 });
 
